@@ -33,9 +33,8 @@ public class Antcolony extends Applet implements Runnable {
 	static int pheromoneGrid[][][];			// 信息素网格数组，2*width*height的三维矩阵，第一维是信息素种类（窝的信息素为0，食物的为1），它存储的是信息素的种类和值
 	static Vector<Pheromone> phe;			// 信息素向量（相当于一个数组），当环境更新信息素的时候，只需要查找这个向量就可以了，不用搜索整个width*height这么多的pheromoneGrid数组点
 	static int maxPheromone = 500000;		// 最大信息素数值，应该根据地图的复杂程度来定，越复杂越大！
-	static int delimiter = 200;				// 信息素消散的速率，为整数，越大则消散的越快
-	static int foodR = 10;			
-	// 食物和窝产生梯度的信息素的半径
+	static int delimiter = 5;				// 信息素消散的速率，为整数，越大则消散的越快
+	static int foodR = 20;					// 食物和窝产生梯度的信息素的半径
 	
 	
 	static Ant ants[];						// 蚂蚁数组
@@ -91,7 +90,7 @@ public class Antcolony extends Applet implements Runnable {
 			}
 		}
 
-		antCount = 150;// 蚂蚁个数缺省为50
+		antCount = 50;// 蚂蚁个数缺省为50
 		// 初始化蚂蚁，这些属性都是蚂蚁的最原始的属性
 		ants = new Ant[antCount];
 		for (int i = 0; i < antCount; i++) {
