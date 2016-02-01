@@ -51,7 +51,7 @@ public class Antcolony extends Applet implements Runnable {
 	static Color BACK_COLOR = Color.black;	// 背景色
 	static Color ANT_COLOR = Color.white;	// 蚂蚁的颜色
 	static Color End_COLOR = Color.cyan;	// 食物点的颜色
-	static int delay = 10;					// 每次运行的间隔速率，越小程序运行越快（这个参数基本没用，因为当蚂蚁多了以后，处理过程很耗时间）
+	static int delay = 1;					// 每次运行的间隔速率，越小程序运行越快（这个参数基本没用，因为当蚂蚁多了以后，处理过程很耗时间）
 
 	// 下面是一些控件信息
 	Button btnStart = new Button("开始");

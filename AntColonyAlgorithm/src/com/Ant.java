@@ -78,19 +78,50 @@ public class Ant {
 		g.fillOval((int) nowPt.x, (int) nowPt.y, 1, 1);
 	}
 
-	public boolean Is_End() {
-		if (judged == false && judgeEnd()) {
-			judged = true;
-			return true;
-		}
-		judged = false;
-		return false;
-	}
-
+	
+	//通过随机判断其是否犯错
 	public boolean Is_Mistake(int value) {
 		return value != 0 && Math.random() < mistake;
 	}
+	
+	//判断两点是否相同
+	public boolean Is_same(Point a, Point b) {
+		return a.x == b.x && a.y == b.y;
+	}
 
+	//求绝对值的最大值
+	public int Max_abs(int a, int b) {
+		return Math.max(Math.abs(a) , Math.abs(b));
+	}
+
+	//反转方向
+	public double Reverse(double d) {	
+		return (Math.PI + d) % (2 * Math.PI);
+	}
+	
+	//修改蚂蚁的位置方向和信息素
+	public void update() {	
+		if (judgeEnd())
+			return;
+		Cal_Next(selectDirect());
+		scatter();
+	}
+	
+	//决策方向和下一步的位置
+	public void Cal_Next(double direct) {
+		int deltx = 0, delty = 0;
+		deltx = (int) (vr * Math.cos(direct));
+		delty = (int) (vr * Math.sin(direct));
+		Point pt = Search_Round(foundTimes % 2,
+				Antcolony.pheromoneGrid[1 - foundTimes % 2][nowPt.x][nowPt.y],
+				deltx, delty);
+		if (Is_same(pt, nowPt))
+			pt = evadeObs(deltx, delty);
+		Cal_Way();
+		nowPt = new Point(pt.x, pt.y);
+	}	
+	
+	//判断其是否在画圈
 	public boolean Is_Circle(int xx, int yy) {
 		int size = historyPoint.size();
 		int minsize = memory;
@@ -104,13 +135,16 @@ public class Ant {
 		}
 		return false;
 	}
-
+	
+	//蚂蚁被信息素吸引
 	public Point Search_Round(int kind, int here, int deltx, int delty) {
 		int maxphe = here;
 		for (int x = -vr; x <= vr; x++) {
 			for (int y = -vr; y <= vr; y++) {
-				int xx = (nowPt.x + x + width) % width;
-				int yy = (nowPt.y + y + height) % height;
+				int xx = nowPt.x + x;
+				int yy = nowPt.y + y;
+				if(xx >= width || yy >= height || xx <= 0 || yy <= 0)
+					continue;
 				if (x != 0 || y != 0) {
 					int phe = Antcolony.pheromoneGrid[1 - kind][xx][yy];
 					if (maxphe < phe && !Is_Mistake(here) && !Is_Circle(xx, yy)) {
@@ -123,11 +157,8 @@ public class Ant {
 		}
 		return evadeObs(deltx, delty);
 	}
-
-	public boolean Is_same(Point a, Point b) {
-		return a.x == b.x && a.y == b.y;
-	}
-
+	
+	//记录当前位置及相关信息
 	public void Cal_Way() {
 		countDistance += distance(lastPt, nowPt);
 		lastPt = nowPt;
@@ -135,43 +166,15 @@ public class Ant {
 		if (historyPoint.size() > memory)
 			historyPoint.removeElementAt(0);
 	}
-
-	public void Cal_Next(double direct) {
-		int deltx = 0, delty = 0;
-		deltx = (int) (vr * Math.cos(direct));
-		delty = (int) (vr * Math.sin(direct));
-		Point pt = Search_Round(foundTimes % 2,
-				Antcolony.pheromoneGrid[1 - foundTimes % 2][nowPt.x][nowPt.y],
-				deltx, delty);
-		if (Is_same(pt, nowPt))
-			pt = evadeObs(deltx, delty);
-		Cal_Way();
-		nowPt = new Point(pt.x, pt.y);
-	}
-
-	public void update() {
-		if (Is_End())
-			return;
-		Cal_Next(selectDirect());
-		scatter();
-	}
-
-	public int Max_abs(int a, int b) {
-		if (Math.abs(a) > Math.abs(b))
-			return a;
-		else
-			return b;
-	}
-
-	private Point evadeObs(int deltx, int delty) {
+	
+	//躲避障碍物
+	private Point evadeObs(int deltx, int delty) {	
 		Point pt = new Point(0, 0);
 		int x, y;
 		int delt = Max_abs(deltx, delty);
 		for (double t = 0; t <= 1; t += 1 / (double) (Math.abs(delt))) {
 			x = (int) (deltx * t + nowPt.x);
 			y = (int) (delty * t + nowPt.y);
-			x = (x + width) % width;
-			y = (y + height) % height;
 			if (Antcolony.obsGrid[x][y] >= 0) {
 				deltx = pt.x - nowPt.x;
 				delty = pt.y - nowPt.y;
@@ -181,24 +184,14 @@ public class Ant {
 			}
 			pt = new Point(x, y);
 		}
-		x = (nowPt.x + deltx + width) % width;
-		y = (nowPt.y + delty + height) % height;
+		x = nowPt.x + deltx;
+		y = nowPt.y + delty;
 		return new Point(x, y);
 	}
+	
 
-	public boolean Is_Oldway() {
-		int size = historyPoint.size();
-		if (size > 4) {
-			for (int j = size - 4; j < size - 1; j++) {
-				Point pt = (Point) (historyPoint.elementAt(j));
-				if (pt.x == lastPt.x && pt.y == lastPt.y)
-					return true;
-			}
-		}
-		return false;
-	}
-
-	private void scatter() {
+	//释放信息素
+	private void scatter() {	
 		if (pheromoneCount <= 0)
 			return;
 		int kind = foundTimes % 2;
@@ -231,19 +224,31 @@ public class Ant {
 		if (phe <= 10)
 			phe = 10;
 	}
-
-	public double Reverse(double d) {
-		return (Math.PI + d) % (2 * Math.PI);
+	
+	//判断是否重复释放信息素
+	public boolean Is_Oldway() {	
+		int size = historyPoint.size();
+		if (size > 4) {
+			for (int j = size - 4; j < size - 1; j++) {
+				Point pt = (Point) (historyPoint.elementAt(j));
+				if (pt.x == lastPt.x && pt.y == lastPt.y)
+					return true;
+			}
+		}
+		return false;
 	}
-
-	public void Cal_Finded() {
-		pheromoneCount = maxPheromone;
-		historyPoint.removeAllElements();
-		mainDirect = Reverse(mainDirect);
-		foundTimes++;
+	
+	//判断是否到终点
+	private boolean judgeEnd() {	
+		int kind = foundTimes % 2;
+		if (kind == 0)
+			return Find_Food();
+		else
+			return Find_Home();
 	}
-
-	public boolean Find_Food() {
+	
+	//判断是否找到食物
+	public boolean Find_Food() {	
 		for (int i = 0; i < Antcolony.endCount; i++) {
 			if (distance(nowPt, Antcolony.endPt[i]) <= vr) {
 				lastPt = new Point(nowPt.x, nowPt.y);
@@ -262,8 +267,9 @@ public class Ant {
 		}
 		return false;
 	}
-
-	public boolean Find_Home() {
+	
+	//判断是否到蚂蚁窝
+	public boolean Find_Home() {		
 		if (distance(nowPt, aimPt) <= vr) {
 			lastPt = new Point(nowPt.x, nowPt.y);
 			nowPt.x = aimPt.x;
@@ -279,14 +285,16 @@ public class Ant {
 		}
 		return false;
 	}
-
-	private boolean judgeEnd() {
-		int kind = foundTimes % 2;
-		if (kind == 0)
-			return Find_Food();
-		else
-			return Find_Home();
+	
+	//结束时的操作
+	public void Cal_Finded() {		
+		pheromoneCount = maxPheromone;
+		historyPoint.removeAllElements();
+		mainDirect = Reverse(mainDirect);
+		foundTimes++;
 	}
+	
+
 
 	private double selectDirect() {
 		double direct, e = 0;
@@ -314,26 +322,33 @@ public class Ant {
 	private double getDirection(Point pt1, Point pt2) {
 		double e;
 		int deltx1 = pt2.x - pt1.x;
+		/*
 		int deltx2;
 		if (pt2.x > pt1.x)
 			deltx2 = pt2.x - pt1.x - width;
 		else
 			deltx2 = pt2.x + width - pt1.x;
+			*/
 		int delty1 = pt2.y - pt1.y;
+		/*
 		int delty2;
 		if (pt2.y > pt1.y)
-			delty2 = pt2.y - pt1.y - height;
+			delty2 =
+			pt2.y - pt1.y - height;
 		else
 			delty2 = pt2.y + height - pt1.y;
+			*/
 		int deltx = deltx1, delty = delty1;
 		if (deltx == 0 && delty == 0)
 			return -1;
+		/*
 		if (Math.abs(deltx2) < Math.abs(deltx1)) {
 			deltx = deltx2;
 		}
 		if (Math.abs(delty2) < Math.abs(delty1)) {
 			delty = delty2;
 		}
+		*/
 		if (deltx != 0) {
 			e = Math.atan((double) (delty) / (double) (deltx));
 			if (deltx < 0) {
@@ -354,13 +369,16 @@ public class Ant {
 
 	private double distance(Point pt1, Point pt2) {
 		int dx1 = pt1.x - pt2.x;
+		/*
 		int dx2;
 		int dx, dy;
 		if (pt1.x > pt2.x)
 			dx2 = pt1.x + width - pt2.x;
 		else
 			dx2 = pt2.x + width - pt1.x;
+			*/
 		int dy1 = pt1.y - pt2.y;
+		/*
 		int dy2;
 		if (pt1.y > pt2.y)
 			dy2 = pt1.y + height - pt2.y;
@@ -373,6 +391,9 @@ public class Ant {
 			dy = dy1;
 		else
 			dy = dy2;
+			*/
+		int dx = dx1;
+		int dy = dy1;
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 
